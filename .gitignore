@@ -25,3 +25,10 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Vector store (committed separately after migration)
+chroma_db/
+chroma_db_new/
+
+# Claude Code internal
+.claude/

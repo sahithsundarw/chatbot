@@ -2,22 +2,24 @@ import os
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
 PERSIST_DIRECTORY = "./chroma_db"
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 
-# Initialize once at startup (loading the embedding model is expensive)
-print("Loading embedding model and vector database...")
-_embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+# Initialize once at startup
+print("Loading vector database...")
+_embedding_model = GoogleGenerativeAIEmbeddings(
+    model="models/gemini-embedding-001",
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+)
 _vector_db = Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=_embedding_model)
 
 google_api_key = os.getenv("GOOGLE_API_KEY")
@@ -28,7 +30,6 @@ _llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash-latest",
     google_api_key=google_api_key,
     temperature=0.3,
-    convert_system_message_to_human=True,
 )
 
 _prompt = PromptTemplate.from_template("""
@@ -76,4 +77,8 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(
+        debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000))
+    )

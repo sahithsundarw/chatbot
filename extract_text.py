@@ -3,7 +3,7 @@ import json
 import pdfplumber
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 # --- PART 1: EXTRACT TEXT FROM PDFS ---
@@ -49,8 +49,12 @@ def chunk_the_text(textbook_content):
 
 # --- PART 3: CREATE EMBEDDINGS AND VECTOR DATABASE ---
 def create_vector_database(chunks_with_metadata):
-    model_name = "all-MiniLM-L6-v2"
-    embedding_model = HuggingFaceEmbeddings(model_name=model_name)
+    from dotenv import load_dotenv
+    load_dotenv()
+    embedding_model = GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001",
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+    )
     
     documents = []
     for chunk_data in chunks_with_metadata:
